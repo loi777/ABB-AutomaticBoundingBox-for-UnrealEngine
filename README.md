@@ -112,7 +112,7 @@ Actor Tags:
 
 - `BB` opts the actor into annotation. The default tracking tag can be changed through `BoundingBoxTag` in the annotation component.
 - The **first tag other than `BB`** is the displayed semantic label. Avoid unrelated extra Actor Tags if you require predictable class names.
-- Without a class tag, the code falls back to the actor's name. Use explicit, consistent labels when recording training data.
+- Without a class tag, the code falls back to the actor's name.
 - The component enables `Render CustomDepth Pass` and assigns `CustomDepth Stencil Value` to the tagged actor's primitive components automatically during refresh. You should not need to manually assign per-object stencil IDs.
 - Actors spawned **after** `BeginPlay` are not automatically discovered. Call **`Refresh Tracked Actors`** on the annotation component after adding/removing objects or changing tags.
 
@@ -174,7 +174,6 @@ The HUD is the **real-time visual overlay**. It reads `GetScreenBoundingBoxes()`
 2. In the GameMode's **Class Defaults**, change **HUD Class** to `YOLOBoundingBoxHUD` (or a Blueprint subclass of it).
 3. Enable this GameMode under **Project Settings → Maps & Modes → Default GameMode**, **or** select it in **World Settings → GameMode Override** for the demo level.
 4. If a level overrides the project GameMode, check the **World Settings** value; the override takes precedence.
-5. Run **Play In Editor (PIE)** and make sure the game's HUD is not disabled by other game logic.
 
 `AYOLOBoundingBoxHUD::DrawHUD()` locates Player 0's active view target, finds its annotation component, and draws screen-space rectangles and labels. The HUD renders the current boxes and labels, with configurable display settings.
 
@@ -248,7 +247,7 @@ This is especially important with Pawns and Blueprints containing Camera Compone
 - **Sequencer/Cine Cameras:** keep the camera projection, aspect ratio, and constrained image rectangle consistent with the annotation capture, particularly when letterboxing or pillarboxing is enabled.
 - **Other view modes:** the existing implementation only computes annotation boxes while the component owner is the active **Player 0 view target**. Offscreen/inactive cameras will not continuously compute boxes by default.
 
-**A camera being visible in the Editor is not the same as being the active Player 0 view target in PIE.** This distinction explains many cases where users see objects in a camera preview but no live boxes.
+**A camera being visible in the Editor is not the same as being the active Player 0 view target in PIE.**
 
 ## 6. Preview bounding boxes without saving
 
@@ -266,7 +265,7 @@ If you spawn new tagged objects or change tags during play, call `Refresh Tracke
 
 ## 7. Optionally record a YOLO dataset
 
-`UYOLODatasetRecorder` is a Blueprint Function Library. It exposes the node **`Record YOLO Bounding Boxes`**, which saves the boxes already calculated by `UYOLOAnnotationComponent`.
+`UYOLODatasetRecorder` is a Blueprint Function Library. It exposes the node **`Record YOLO Bounding Boxes`**, which saves the boxes already calculated by `UYOLOAnnotationComponent`. Set this for each frame to record a sequence of labels such for a video.
 
 ### Blueprint example: capture on demand
 
@@ -297,29 +296,19 @@ For repeated recordings, generate **unique** frame names (such as an incrementin
 
 ### Output files
 
-With `OutputFolder = YOLODataset`, files are written beneath:
+By default, recorded datasets are stored in `<Project>/Saved/YOLODataset/`:
 
 ```text
-<Project>/Saved/YOLODataset/
+YOLODataset/
 ├── classes.txt
 ├── label_mode.txt
-├── images/                  # created if image capture is enabled
+├── images/
 │   └── frame_000001.png
 └── labels/
     └── frame_000001.txt
 ```
 
-The PNG is intended to contain the **clean camera image without the bounding-box HUD**. An example YOLO label row is:
-
-```text
-0 0.512500 0.460000 0.225000 0.350000
-```
-
-Format: `class_id x_center y_center width height`, with the four spatial values normalized to `0..1` relative to the camera image (not the entire PIE viewport including letterbox/pillarbox bars). Numeric class IDs correspond to the **zero-based line indices of `classes.txt`**.
-
-Choose **one class mode per dataset**. The recorder uses `label_mode.txt` to reject attempts to mix `semantic` and `instance` modes in one output folder. In most object-detection datasets, **semantic mode** (`bSeparateInstancesByID = false`) is the appropriate choice. The instance-ID mode makes a different class for each `Label + InstanceID` combination; because stencil IDs are assigned at refresh, this is not a persistent object-tracking identity scheme.
-
-To train a YOLO model, organize the captured images into training and validation sets and create the dataset YAML expected by your trainer. For continuous recording, trigger captures at a controlled interval and account for the cost of synchronous GPU readback.
+The output directory can be changed using `OutputFolder`. Image generation is optional and can be disabled when only annotations are required.
 
 ## Configuration reference
 
@@ -384,10 +373,9 @@ Use one stable camera state per recording and validate a test image with drawn b
 - **Instance IDs are not persistent tracking IDs** across scene loads or refreshes.
 - Visibility and silhouette accuracy depend on the custom-depth/stencil rendering path, material behavior, and handling of translucent/masked objects.
 
-## References
+## For Developers and Researchers
 
-- [Epic Games: Unreal Engine Rendering Settings — Custom Depth-Stencil Pass](https://dev.epicgames.com/documentation/unreal-engine/rendering-settings-in-the-unreal-engine-project-settings)
-- [Epic Games: Set View Target with Blend](https://dev.epicgames.com/documentation/unreal-engine/BlueprintAPI/Game/Player/SetViewTargetwithBlend)
-- [Epic Games: Game Mode and Game State](https://dev.epicgames.com/documentation/en-us/unreal-engine/game-mode-and-game-state-in-unreal-engine)
-- [Epic Games: Using Custom Stencil to Selectively Bypass Postprocessing](https://dev.epicgames.com/community/learning/tutorials/LEKn/unreal-engine-using-custom-stencil-to-selectively-bypass-postprocessing)
+This tool is a "thank you" of mine to the community, I searched for a while for tools that annotate bounding boxes for Unreal but the only open source free one I found was quite outdated for recent versions.
+
+If you plan on using and developing with this tool, consider helping this repository by presenting your changes.
 
