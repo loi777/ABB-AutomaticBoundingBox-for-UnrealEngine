@@ -25,7 +25,6 @@ This project uses **Actor Tags**, **Custom Depth/Stencil**, a **post-process obj
 - [Configuration reference](#configuration-reference)
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
-- [Before publishing a release](#before-publishing-a-release)
 
 ## How it works
 
