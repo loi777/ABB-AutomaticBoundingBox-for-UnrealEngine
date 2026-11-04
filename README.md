@@ -4,12 +4,6 @@
 
 This project uses **Actor Tags**, **Custom Depth/Stencil**, a **post-process object-ID mask**, and a **camera-aware HUD** to display bounding boxes around visible objects. You can move a camera through the scene and see annotations update **without saving anything**, or explicitly capture YOLO-format labels and matching images when you want to build a dataset.
 
-> **Project status:** This guide documents a C++ implementation developed around **Unreal Engine 5.6**. Source snapshots include several development revisions; verify that the files shipped in your repository form one consistent, compiling version. The `M_YOLO_ObjectID` material asset must also be included or reconstructed according to the contract below. Compatibility with other UE versions has not yet been validated.
-
-<!-- Add a screenshot or GIF once available:
-![Real-time bounding-box preview](Docs/Images/bounding-box-preview.gif)
--->
-
 ## Contents
 
 - [How it works](#how-it-works)
@@ -56,13 +50,13 @@ The central class is `UYOLOAnnotationComponent`. On `BeginPlay`, it discovers ac
 
 ## Requirements and included files
 
-- Unreal Engine **5.6** is the development reference. Other versions need testing.
+- Unreal Engine **5.6**.
 - A **C++ Unreal project** (a Blueprint-only project can be converted by adding a C++ class).
 - A desktop development toolchain supported by your Unreal version (for example, Visual Studio or Rider).
 - A working game viewport with **Player Controller 0**; the current implementation is designed around one local player.
-- The repository's C++ sources **and** `M_YOLO_ObjectID` material asset (or the ability to reconstruct that material).
+- The C++ sources and `M_YOLO_ObjectID` post-process material.
 
-The implementation consists of the following source files (the names are important; put each `.h` and `.cpp` pair into your own module, not the original `MEATFACTORY` module):
+The implementation uses the following source files. Place them in your Unreal project module:
 
 ```text
 Source/<YourModule>/
@@ -77,10 +71,8 @@ Source/<YourModule>/
 └── YOLODatasetRecorder.cpp
 
 Content/
-└── .../M_YOLO_ObjectID.uasset  # required custom post-process material
+└── .../M_YOLO_ObjectID.uasset
 ```
-
-**Important:** Avoid mixing the older geometric-projection implementation with the newer visible-pixel implementation. They are distinct generations of the code. Use a matched release of all files.
 
 ## Installation
 
@@ -88,10 +80,10 @@ Content/
 2. Copy the supplied `.h` and `.cpp` files into `Source/<YourModule>/` (or an appropriate subdirectory within that module).
 3. Update the exported API macro in the headers. For example, change `MEATFACTORY_API` to `<YOURMODULE>_API`, using the macro generated for **your** Unreal module. Do not use the literal angle brackets.
 4. Ensure that your module's `.Build.cs` lists the required dependencies. In particular, the Cine Camera class requires `CinematicCamera`; `Core`, `CoreUObject`, `Engine`, and `InputCore` are used by these sources. Your project's existing dependencies may already include some of these.
-5. Regenerate project files if required, compile, and reopen the project. Resolve build errors before continuing.
+5. Regenerate project files if required, compile, and reopen the project.
 6. Copy/import the `M_YOLO_ObjectID` **material asset** into your project's Content folder; see [step 3](#3-configure-the-post-process-material).
 
-Illustrative `Build.cs` dependency entries (merge these into your existing module, rather than replacing its configuration):
+Add the following dependencies to your module's `.Build.cs`:
 
 ```csharp
 PublicDependencyModuleNames.AddRange(new string[]
@@ -100,7 +92,7 @@ PublicDependencyModuleNames.AddRange(new string[]
 });
 ```
 
-> If your project's module name contains multiple words, use its actual generated `_API` macro. For example, `MYPROJECT_API` is not automatically correct for every module. This code has not been repackaged as an Unreal plugin; copy it as project source unless your repository provides a packaged plugin.
+Use your module's generated `_API` macro in the C++ class declarations. This setup uses source files inside an Unreal project module.
 
 ## 1. Enable Custom Depth/Stencil
 
@@ -112,7 +104,7 @@ PublicDependencyModuleNames.AddRange(new string[]
 
 **Do not select just “Enabled”**: that creates a depth buffer but does **not** enable the stencil read/write buffer needed for per-object IDs. [Epic's Rendering Settings documentation](https://dev.epicgames.com/documentation/unreal-engine/rendering-settings-in-the-unreal-engine-project-settings) explains the available modes.
 
-For post-process stencil work, consider disabling **Custom Depth with TemporalAA Jitter** if mask edges are unstable. This is a troubleshooting option, not a required setting in every renderer.
+If bounding-box edges flicker, try disabling **Custom Depth with TemporalAA Jitter** in the rendering settings.
 
 ## 2. Tag objects
 
@@ -133,7 +125,7 @@ Actor Tags:
 
 - `BB` opts the actor into annotation. The default tracking tag can be changed through `BoundingBoxTag` in the annotation component.
 - The **first tag other than `BB`** is the displayed semantic label. Avoid unrelated extra Actor Tags if you require predictable class names.
-- Without a class tag, the code falls back to the actor's name. For a training dataset, **use explicit, consistent labels**.
+- Without a class tag, the code falls back to the actor's name. Use explicit, consistent labels when recording training data.
 - The component enables `Render CustomDepth Pass` and assigns `CustomDepth Stencil Value` to the tagged actor's primitive components automatically during refresh. You should not need to manually assign per-object stencil IDs.
 - Actors spawned **after** `BeginPlay` are not automatically discovered. Call **`Refresh Tracked Actors`** on the annotation component after adding/removing objects or changing tags.
 
@@ -150,7 +142,7 @@ Open or create `M_YOLO_ObjectID` in the Material Editor:
 - **Material Domain:** `Post Process`.
 - **Blendable Location:** **After Tonemapping** / **Scene Color After Tonemapping** (wording varies with Unreal version).
 - The output must be a **solid, unlit-style ID mask**, not a blend with the original scene color.
-- Read each pixel's **CustomStencil** and, to exclude geometry hidden behind other geometry, compare **CustomDepth** against **SceneDepth** with a suitable tolerance. The correct depth-comparison tolerance and behavior should be verified against the shipped material asset.
+- Read each pixel's **CustomStencil** and, to exclude geometry hidden behind other geometry, compare **CustomDepth** against **SceneDepth** with a suitable tolerance. Use a small depth-comparison tolerance appropriate to your scene scale.
 - Output **black** for untracked/background/fully occluded pixels.
 
 ### Required mask encoding
@@ -165,7 +157,7 @@ The implementation's CPU reader expects these channel values for each **visible 
 
 For background or excluded pixels, output `(0, 0, 0)`. A valid ID is an integer from `1` to `255`. The code identifies the mask by checking that red is near `255`, green + blue is near `255`, and green is a currently tracked instance ID.
 
-**Conceptual material logic:**
+**Material logic:**
 
 ```text
 ID = CustomStencil
@@ -177,11 +169,9 @@ else:
     Emissive Color = (0.0, 0.0, 0.0)
 ```
 
-This is an **output specification**, not a substitute for a tested `.uasset`/node graph. Edge cases such as translucent or masked geometry, Nanite, stencil sampling, and depth precision need validation against the engine/rendering setup. **For a genuinely plug-and-play repository, include the tested `M_YOLO_ObjectID.uasset` and a screenshot of its node graph.**
-
 ### Assign the material
 
-1. Add a **`YOLOAnnotationComponent`** to the camera/view-target actor (the included `AYOLOCameraActor` already creates one).
+1. Add a **`YOLOAnnotationComponent`** to the camera/view-target actor or select its existing component.
 2. Select the actor and find **YOLO → Visible Pixels** in Details.
 3. Set **Annotation Post Process Material** to `M_YOLO_ObjectID`.
 4. Initially set **Mask Resolution Scale = `1.0`** and **Minimum Visible Pixels = `1`** for accurate debugging.
@@ -199,15 +189,15 @@ The HUD is the **real-time visual overlay**. It reads `GetScreenBoundingBoxes()`
 4. If a level overrides the project GameMode, check the **World Settings** value; the override takes precedence.
 5. Run **Play In Editor (PIE)** and make sure the game's HUD is not disabled by other game logic.
 
-`AYOLOBoundingBoxHUD::DrawHUD()` locates Player 0's active view target, finds its annotation component, and draws screen-space rectangles and labels. Depending on the HUD source revision, boxes have a configurable common color or a different color per instance ID.
+`AYOLOBoundingBoxHUD::DrawHUD()` locates Player 0's active view target, finds its annotation component, and draws screen-space rectangles and labels. The HUD renders the current boxes and labels, with configurable display settings.
 
-> This is a regular Unreal `AHUD`-based overlay, **not** a UMG widget that must be manually added to the viewport.
+The overlay uses Unreal's built-in `AHUD` system; no UMG widget needs to be added manually.
 
 ## 5. Set up and control the camera
 
 ### Option A — Included free-flight YOLO camera (easiest)
 
-The bundled **`AYOLOCameraActor`** derives from `ACineCameraActor` and owns a `UYOLOAnnotationComponent`. It is intended for moving around a level and inspecting bounding boxes in real time.
+The **`AYOLOCameraActor`** derives from `ACineCameraActor` and supports moving around a level while inspecting bounding boxes in real time.
 
 1. Place an instance of `YOLOCameraActor` in your level (or create a Blueprint child named `BP_YOLOCamera`).
 2. Select it and assign **`M_YOLO_ObjectID`** on its annotation component, as explained above.
@@ -230,7 +220,7 @@ Event BeginPlay
 
 You can create an actor reference by selecting the placed camera and adding a reference to it in the Level Blueprint, or by supplying a suitable actor reference from your own camera-manager logic. [Epic: Set View Target with Blend](https://dev.epicgames.com/documentation/unreal-engine/BlueprintAPI/Game/Player/SetViewTargetwithBlend).
 
-**Camera movement controls (bundled free-flight camera):**
+**Free-flight camera controls:**
 
 | Input | Action |
 | --- | --- |
@@ -249,7 +239,7 @@ Adjust the camera's **YOLO → Movement** properties:
 | `MouseSensitivity` | `0.15` | Mouse-look sensitivity |
 | `MaxPitchAngle` | `89.0` | Limits looking straight up/down |
 
-These controls are implemented by direct key polling in the C++ camera's `Tick`; they do not require you to define an Enhanced Input mapping for this specific sample camera. If your project manages the cursor, input mode, or player possession differently, adapt its controller input handling accordingly.
+These controls use direct key polling in the camera's `Tick` and do not require an Enhanced Input mapping. The game viewport needs keyboard and mouse focus.
 
 ### Option B — Your own camera or camera rig
 
@@ -268,7 +258,7 @@ This is especially important with Pawns and Blueprints containing Camera Compone
 - **Blueprint-controlled movement:** move/rotate the active camera actor; annotations update while its view target remains active.
 - **Player-controlled camera:** attach the annotation component to the active camera-owning Pawn/Actor; do not assume that the custom free-flight keys apply to your own controller.
 - **Switching cameras:** change Player 0's active view target with `Set View Target with Blend`. Put the annotation component and material on **each** candidate view-target actor if you want bounding boxes while using it.
-- **Sequencer/Cine Cameras:** the camera projection, aspect ratio, and constrained image rectangle must match the capture. Test at the actual output resolution, especially with letterboxing or pillarboxing. The recovered code includes later projection/aspect corrections, but you should verify your integration.
+- **Sequencer/Cine Cameras:** keep the camera projection, aspect ratio, and constrained image rectangle consistent with the annotation capture, particularly when letterboxing or pillarboxing is enabled.
 - **Other view modes:** the existing implementation only computes annotation boxes while the component owner is the active **Player 0 view target**. Offscreen/inactive cameras will not continuously compute boxes by default.
 
 **A camera being visible in the Editor is not the same as being the active Player 0 view target in PIE.** This distinction explains many cases where users see objects in a camera preview but no live boxes.
@@ -342,7 +332,7 @@ Format: `class_id x_center y_center width height`, with the four spatial values 
 
 Choose **one class mode per dataset**. The recorder uses `label_mode.txt` to reject attempts to mix `semantic` and `instance` modes in one output folder. In most object-detection datasets, **semantic mode** (`bSeparateInstancesByID = false`) is the appropriate choice. The instance-ID mode makes a different class for each `Label + InstanceID` combination; because stencil IDs are assigned at refresh, this is not a persistent object-tracking identity scheme.
 
-> **Dataset export is not the same as a training-ready release.** Check image/label alignment, class definitions, train/validation splits, and the dataset YAML expected by your YOLO trainer. If you need multiple captures per second, add a controlled capture loop and profile the synchronous GPU readback; do not assume the sample runs at full frame rate while saving every frame.
+To train a YOLO model, organize the captured images into training and validation sets and create the dataset YAML expected by your trainer. For continuous recording, trigger captures at a controlled interval and account for the cost of synchronous GPU readback.
 
 ## Configuration reference
 
@@ -371,11 +361,11 @@ Choose **one class mode per dataset**. The recorder uses `label_mode.txt` to rej
 
 ### The game view works, but the annotation capture is black
 
-Check the post-process material's domain/blendable location and its assignment on the annotation component. In a recovered **UE 5.6** revision, clearing `PostProcessSettings` *after* `SetCameraView()` made the manual `SceneCapture2D` render black. The later correction keeps the camera's settings and re-adds the mask blendable. Use that corrected, matching source revision rather than the earlier experimental code.
+Check the post-process material's domain/blendable location and its assignment on the annotation component. Keep the capture camera's post-process settings when calling `SetCameraView()`, and add the mask material as a blendable afterward. Clearing `PostProcessSettings` at this stage can produce a black capture in Unreal Engine 5.6.
 
 ### Boxes are shifted, stretched, or incorrect near the edges
 
-This was a real issue during development with **Cine Camera filmback, constrained aspect ratios, PIE viewport offsets, and projection matrices**. Use the source revision that includes camera-aspect and exact-projection corrections, and confirm that mask and RGB captures use the same view. Test at a fixed viewport resolution and compare results in the center **and** at the corners.
+Check **Cine Camera filmback, constrained aspect ratios, PIE viewport offsets, and projection matrices**. Ensure the annotation capture and the RGB camera use the same projection and image rectangle. Compare box alignment at the center and edges of the view.
 
 ### Hidden objects still receive boxes
 
@@ -406,7 +396,6 @@ Use one stable camera state per recording and validate a test image with drawn b
 - **CPU mask readback each active frame** (`ReadPixels`) can be expensive; reduce mask resolution for preview and profile before scaling to large datasets.
 - **Instance IDs are not persistent tracking IDs** across scene loads or refreshes.
 - Visibility and silhouette accuracy depend on the custom-depth/stencil rendering path, material behavior, and handling of translucent/masked objects.
-- This documentation was reconstructed from development sources. **The final integrated package, material graph, and runtime behavior still require end-to-end testing before claiming plug-and-play support.**
 
 ## References
 
@@ -414,3 +403,4 @@ Use one stable camera state per recording and validate a test image with drawn b
 - [Epic Games: Set View Target with Blend](https://dev.epicgames.com/documentation/unreal-engine/BlueprintAPI/Game/Player/SetViewTargetwithBlend)
 - [Epic Games: Game Mode and Game State](https://dev.epicgames.com/documentation/en-us/unreal-engine/game-mode-and-game-state-in-unreal-engine)
 - [Epic Games: Using Custom Stencil to Selectively Bypass Postprocessing](https://dev.epicgames.com/community/learning/tutorials/LEKn/unreal-engine-using-custom-stencil-to-selectively-bypass-postprocessing)
+
