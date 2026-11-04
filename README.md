@@ -80,16 +80,6 @@ Content/
 5. Regenerate project files if required, compile, and reopen the project.
 6. Copy/import the `M_YOLO_ObjectID` **material asset** into your project's Content folder; see [section 3](#3-configure-the-post-process-material).
 
-Add the following dependencies to your module's `.Build.cs`:
-
-```csharp
-PublicDependencyModuleNames.AddRange(new string[]
-{
-    "Core", "CoreUObject", "Engine", "InputCore", "CinematicCamera"
-});
-```
-
-Use your module's generated `_API` macro in the C++ class declarations. This setup uses source files inside an Unreal project module.
 
 ## 1. Enable Custom Depth/Stencil
 
