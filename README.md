@@ -75,7 +75,7 @@ Content/
 
 1. Create or open a C++ Unreal Engine project and close the editor.
 2. Copy the supplied `.h` and `.cpp` files into `Source/<YourModule>/` (or an appropriate subdirectory within that module).
-3. Update the exported API macro in the headers. For example, change `MEATFACTORY_API` to `<YOURMODULE>_API`, using the macro generated for **your** Unreal module. Do not use the literal angle brackets.
+3. Update the exported API macro in the headers. Change `<YOURMODULE>_API` using the macro generated for **your** Unreal module. Do not use the literal angle brackets.
 4. Ensure that your module's `.Build.cs` lists the required dependencies. In particular, the Cine Camera class requires `CinematicCamera`; `Core`, `CoreUObject`, `Engine`, and `InputCore` are used by these sources. Your project's existing dependencies may already include some of these.
 5. Regenerate project files if required, compile, and reopen the project.
 6. Copy/import the `M_YOLO_ObjectID` **material asset** into your project's Content folder; see [step 3](#3-configure-the-post-process-material).
