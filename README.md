@@ -52,9 +52,6 @@ The central class is `UYOLOAnnotationComponent`. On `BeginPlay`, it discovers ac
 
 - Unreal Engine **5.6**.
 - A **C++ Unreal project** (a Blueprint-only project can be converted by adding a C++ class).
-- A desktop development toolchain supported by your Unreal version (for example, Visual Studio or Rider).
-- A working game viewport with **Player Controller 0**; the current implementation is designed around one local player.
-- The C++ sources and `M_YOLO_ObjectID` post-process material.
 
 The implementation uses the following source files. Place them in your Unreal project module:
 
