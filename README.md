@@ -46,7 +46,7 @@ The central class is `UYOLOAnnotationComponent`. On `BeginPlay`, it discovers ac
 | Mode | What happens | Files written? |
 | --- | --- | --- |
 | **Live preview** | The active camera continuously updates and displays rectangles in the game viewport. | **No** |
-| **Record a frame** | A Blueprint call writes normalized labels, and optionally a clean image, for the current camera frame. | **Yes, on request** |
+| **Record a frame** | A Blueprint activation on each frame writes normalized labels, and optionally a clean image, for the current camera frame. | **Yes** |
 
 ## Requirements and included files
 
