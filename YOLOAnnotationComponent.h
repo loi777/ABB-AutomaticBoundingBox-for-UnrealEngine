@@ -19,7 +19,7 @@ class UTextureRenderTarget2D;
  * the pixels that are actually visible for each tracked actor.
  */
 UCLASS(ClassGroup = (YOLO), meta = (BlueprintSpawnableComponent))
-class MEATFACTORY_API UYOLOAnnotationComponent : public UActorComponent
+class <YOURMODULE>_API UYOLOAnnotationComponent : public UActorComponent
 {
     GENERATED_BODY()
 
