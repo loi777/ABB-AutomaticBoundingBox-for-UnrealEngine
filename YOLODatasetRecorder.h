@@ -13,7 +13,7 @@ class UYOLOAnnotationComponent;
  * It consumes the already-calculated results from UYOLOAnnotationComponent.
  */
 UCLASS()
-class MEATFACTORY_API UYOLODatasetRecorder : public UBlueprintFunctionLibrary
+class <YOURMODULE>_API UYOLODatasetRecorder : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 
