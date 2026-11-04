@@ -377,5 +377,7 @@ Use one stable camera state per recording and validate a test image with drawn b
 
 This tool is a "thank you" of mine to the community, I searched for a while for tools that annotate bounding boxes for Unreal but the only open source free one I found was quite outdated for recent versions.
 
+The code found in this repository was initially done with the usage of AI and my personnal guidance and insight. This tool was tested in an internal research project of mine with great results.
+
 If you plan on using and developing with this tool, consider helping this repository by presenting your changes.
 
