@@ -15,7 +15,7 @@
  * UYOLOAnnotationComponent.
  */
 UCLASS()
-class MEATFACTORY_API AYOLOCameraActor : public ACineCameraActor
+class <YOURMODULE>_API AYOLOCameraActor : public ACineCameraActor
 {
     GENERATED_BODY()
 
