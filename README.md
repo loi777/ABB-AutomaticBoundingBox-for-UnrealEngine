@@ -409,26 +409,9 @@ Use one stable camera state per recording and validate a test image with drawn b
 - Visibility and silhouette accuracy depend on the custom-depth/stencil rendering path, material behavior, and handling of translucent/masked objects.
 - This documentation was reconstructed from development sources. **The final integrated package, material graph, and runtime behavior still require end-to-end testing before claiming plug-and-play support.**
 
-## Before publishing a release
-
-To make the repository usable *by following this README alone*, include and verify all of the following:
-
-- [ ] One matched, compiling set of `.h` and `.cpp` files (annotation component, types, camera, HUD, recorder).
-- [ ] Correct Unreal module API macro and `.Build.cs` dependencies; no `MEATFACTORY_API` left in a generic public package.
-- [ ] A tested **`M_YOLO_ObjectID.uasset`** and screenshot of its full node graph.
-- [ ] A working sample map, tagged objects, GameMode, HUD configuration, and camera Blueprint.
-- [ ] A screenshot or short GIF showing live boxes, camera movement, and occlusion.
-- [ ] A sample image/label pair captured by the recorder and checked for pixel alignment.
-- [ ] A tested list of Unreal Engine versions/platforms.
-- [ ] A `LICENSE` file and repository-specific contribution/support information.
-
 ## References
 
 - [Epic Games: Unreal Engine Rendering Settings — Custom Depth-Stencil Pass](https://dev.epicgames.com/documentation/unreal-engine/rendering-settings-in-the-unreal-engine-project-settings)
 - [Epic Games: Set View Target with Blend](https://dev.epicgames.com/documentation/unreal-engine/BlueprintAPI/Game/Player/SetViewTargetwithBlend)
 - [Epic Games: Game Mode and Game State](https://dev.epicgames.com/documentation/en-us/unreal-engine/game-mode-and-game-state-in-unreal-engine)
 - [Epic Games: Using Custom Stencil to Selectively Bypass Postprocessing](https://dev.epicgames.com/community/learning/tutorials/LEKn/unreal-engine-using-custom-stencil-to-selectively-bypass-postprocessing)
-
----
-
-**Scope:** Unreal-based synthetic-data annotation and optional YOLO bounding-box export. This project does not run a YOLO inference model; it creates ground-truth annotations from rendered scene information.
