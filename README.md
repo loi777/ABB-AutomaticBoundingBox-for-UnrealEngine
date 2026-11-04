@@ -381,3 +381,4 @@ I searched for a while for tools that annotate bounding boxes for Unreal but the
 The code found in this repository was initially done with the use of AI and my personal guidance and insight. This tool was tested in an internal research project of mine with great results.
 
 If you plan on using and developing with this tool, consider helping this repository by presenting your changes.
+And any comments or problems you might have, feel free to voice them either in the issues or to me, I'm happy to help.
