@@ -12,7 +12,7 @@
  * already produced by that component.
  */
 UCLASS()
-class MEATFACTORY_API AYOLOBoundingBoxHUD : public AHUD
+class <YOURMODULE>_API AYOLOBoundingBoxHUD : public AHUD
 {
     GENERATED_BODY()
 
